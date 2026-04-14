@@ -20,6 +20,7 @@ features that my fork provides:
   and LaTeX exports.
 - Automatically wraps segments of ALL-CAPS text as small caps (such as
   acronyms).
+- Archive front matter
 
 For how I integrate this fork into website generation see the website
 [[https://joarvarndt.se/website][colophon]].
