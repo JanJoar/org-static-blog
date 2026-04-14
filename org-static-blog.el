@@ -867,14 +867,12 @@ Does not wrap acronyms inside href attributes."
                       placeholder))
                   result))
     (setq href-values (nreverse href-values))
-
     ;; Wrap all sequences of uppercase letters (optionally with &/&amp;, ., or - between them)
     (setq result (replace-regexp-in-string
-                  "\\([A-Z]\\(?:\\(?:&\\(?:amp;\\)?\\|[.-]\\)?[A-Z]\\)+\\)"
+                  "\\([A-Z]\\(?:\\(?:&\\(?:amp;\\)?\\|[.-]\\)?[A-Z0-9]\\)+\\)"
                   (lambda (match)
                     (concat "<span class=\"small-caps\">" (downcase (match-string 1 match)) "</span>"))
                   result t))
-
     ;; Restore href values
     (let ((counter 0))
       (dolist (href-val href-values)
