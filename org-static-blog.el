@@ -851,12 +851,14 @@ If a class attribute becomes empty after removal, remove the attribute entirely.
 
 (defun org-static-blog--wrap-acronyms (html)
   "Wrap sequences of multiple uppercase letters in <span class=\"small-caps\"> tags.
-Does not wrap acronyms inside href attributes."
+Does not wrap acronyms inside href attributes or code blocks."
   (let ((result html)
         (href-values '())
         (href-counter 0)
+        (code-values '())
+        (code-counter 0)
         (case-fold-search nil))
-    ;; Protect href values by replacing with placeholders
+    ;; Protect href attributes
     (setq result (replace-regexp-in-string
                   "href=\"\\([^\"]*\\)\""
                   (lambda (match)
@@ -867,21 +869,55 @@ Does not wrap acronyms inside href attributes."
                       placeholder))
                   result))
     (setq href-values (nreverse href-values))
+    ;; Protect code blocks (both <pre> and <code> tags)
+    ;; We need to handle multiline content, so we can't use normal regex
+    (let ((start 0))
+      (while (string-match "<\\(?:pre\\|code\\)\\(?:[^>]*\\)>" result start)
+        (let* ((tag-start (match-beginning 0))
+               (tag-end (match-end 0))
+               (tag (match-string 0 result))
+               (is-pre (string-match "^<pre" tag))
+               (close-tag (if is-pre "</pre>" "</code>"))
+               (close-pos (string-match (regexp-quote close-tag) result tag-end)))
+          (if close-pos
+              (let* ((code-content (substring result tag-start (+ close-pos (length close-tag))))
+                     (placeholder (format "__xcode_protected_%d__" code-counter)))
+                (push code-content code-values)
+                (setq result (concat (substring result 0 tag-start)
+                                     placeholder
+                                     (substring result (+ close-pos (length close-tag)))))
+                (setq code-counter (1+ code-counter))
+                (setq start (+ tag-start (length placeholder))))
+            (setq start tag-end)))))
+    (setq code-values (nreverse code-values))
     ;; Wrap all sequences of uppercase letters (optionally with &/&amp;, ., or - between them)
     (setq result (replace-regexp-in-string
                   "\\([A-Z]\\(?:\\(?:&\\(?:amp;\\)?\\|[.-]\\)?[A-Z0-9]\\)+\\)"
                   (lambda (match)
                     (concat "<span class=\"small-caps\">" (downcase (match-string 1 match)) "</span>"))
                   result t))
+    ;; Restore code blocks
+    (let ((counter 0))
+      (dolist (code-val code-values)
+        (let ((placeholder (format "__xcode_protected_%d__" counter)))
+          (let ((pos 0))
+            (while (setq pos (string-match (regexp-quote placeholder) result pos))
+              (setq result (concat (substring result 0 pos)
+                                   code-val
+                                   (substring result (+ pos (length placeholder)))))
+              (setq pos (+ pos (length code-val))))))
+        (setq counter (1+ counter))))
     ;; Restore href values
     (let ((counter 0))
       (dolist (href-val href-values)
-        (setq result (replace-regexp-in-string
-                      (format "__xhref_protected_%d__" counter)
-                      (lambda (_match) href-val)
-                      result t))
+        (let ((placeholder (format "__xhref_protected_%d__" counter)))
+          (let ((pos 0))
+            (while (setq pos (string-match (regexp-quote placeholder) result pos))
+              (setq result (concat (substring result 0 pos)
+                                   href-val
+                                   (substring result (+ pos (length placeholder)))))
+              (setq pos (+ pos (length href-val))))))
         (setq counter (1+ counter))))
-
     result))
 
 (defun org-static-blog-render-post-content (post-filename)
