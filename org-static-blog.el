@@ -276,6 +276,41 @@ Only if og tags are enabled. It can be overridden with the
   :type '(string)
   :safe t)
 
+(defcustom org-static-blog-generate-og-images nil
+  "Whether to automatically generate og:image images using ImageMagick."
+  :type '(boolean)
+  :safe t)
+
+(defcustom org-static-blog-og-image-directory "images/og/"
+  "Directory where generated og:images are stored, relative to publish directory."
+  :type '(string)
+  :safe t)
+
+(defcustom org-static-blog-og-image-width 1200
+  "Width of generated og:images in pixels."
+  :type '(integer)
+  :safe t)
+
+(defcustom org-static-blog-og-image-height 630
+  "Height of generated og:images in pixels."
+  :type '(integer)
+  :safe t)
+
+(defcustom org-static-blog-og-image-font "Helvetica"
+  "Font to use for og:image text."
+  :type '(string)
+  :safe t)
+
+(defcustom org-static-blog-og-image-background "#1a1a1a"
+  "Background color for generated og:images (hex format)."
+  :type '(string)
+  :safe t)
+
+(defcustom org-static-blog-og-image-text-color "#ffffff"
+  "Text color for generated og:images (hex format)."
+  :type '(string)
+  :safe t)
+
 (defcustom org-static-blog-display-git-date nil
   "Shows the date that a post was last edited."
   :type '(boolean)
@@ -452,6 +487,8 @@ unconditionally."
                         (org-static-blog-get-draft-filenames)))
     (when (or force-render (org-static-blog-needs-publishing-p file))
       (org-static-blog-publish-file file)))
+  (when org-static-blog-generate-og-images
+    (org-static-blog-generate-all-og-images))
   ;; don't spam too many deprecation warnings:
   (let ((org-static-blog-enable-deprecation-warning nil))
     (org-static-blog-assemble-index)
