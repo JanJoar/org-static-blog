@@ -42,6 +42,7 @@
 (require 'cl-extra)
 (require 'org)
 (require 'ox-html)
+(require 'utils)
 
 (defgroup org-static-blog nil
   "Settings for a static blog generator using 'org-mode'."
@@ -446,7 +447,11 @@ Only if og tags are enabled. It can be overridden with the
 		  (org-static-blog-get-absolute-url tImage))
 	(when (> (length org-static-blog-image) 0)
 	  (format "<meta property=\"og:image\" content=\"%s\">\n"
-		  (org-static-blog-get-absolute-url org-static-blog-image))))))
+		  (org-static-blog-get-absolute-url (if tUrl
+							   (concat org-static-blog-og-image-directory
+                                                                   (replace-regexp-in-string ".*/" ""
+                                                                                             (replace-regexp-in-string "\\.html$" ".png" tUrl)))
+							 org-static-blog-image)))))))
    org-static-blog-page-header
    "</head>\n"
    "<body>\n"
