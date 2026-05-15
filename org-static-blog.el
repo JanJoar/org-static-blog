@@ -445,13 +445,11 @@ Only if og tags are enabled. It can be overridden with the
       (if tImage
 	  (format "<meta property=\"og:image\" content=\"%s\">\n"
 		  (org-static-blog-get-absolute-url tImage))
-	(when (> (length org-static-blog-image) 0)
+	(when (and (> (length org-static-blog-image) 0) tUrl)
 	  (format "<meta property=\"og:image\" content=\"%s\">\n"
-		  (org-static-blog-get-absolute-url (if tUrl
-							   (concat org-static-blog-og-image-directory
-                                                                   (replace-regexp-in-string ".*/" ""
-                                                                                             (replace-regexp-in-string "\\.html$" ".png" tUrl)))
-							 org-static-blog-image)))))))
+		  (org-static-blog-get-absolute-url (concat org-static-blog-og-image-directory
+                                                            (replace-regexp-in-string ".*/" ""
+                                                                                      (replace-regexp-in-string "\\.html$" ".png" tUrl)))))))))
    org-static-blog-page-header
    "</head>\n"
    "<body>\n"
