@@ -50,37 +50,38 @@ Returns the relative path to the generated image, or nil on failure."
          (height (number-to-string org-static-blog-og-image-height)))
     (unless (file-exists-p output-dir)
       (make-directory output-dir t))
-    (call-process "convert" nil (get-buffer-create "*convert-output*") nil
-                  "-size" (concat (number-to-string org-static-blog-og-image-width) "x" 
-                                  (number-to-string org-static-blog-og-image-height))
-                  (concat "xc:" org-static-blog-og-image-background)
-                  "\("
-                  "-size" "1000x400"
-                  "-background" "none"
-                  "-font" org-static-blog-og-image-font
-                  "-pointsize" "60"
-                  "-fill" org-static-blog-og-image-text-color
-                  (concat "caption:" (filter-tags-from-title title))
-                  "\)"
-                  "-gravity" "NorthWest"
-                  "-geometry" "+120+160"
-                  "-composite"
-                  
-                  "-pointsize" "28"
-                  "-font" org-static-blog-og-image-font
-                  "-gravity" "SouthWest"
-                  "-fill" org-static-blog-og-image-text-color
-                  "-annotate" "+120+100" date-string
-                  "\("
-                  (expand-file-name (concat org-static-blog-publish-directory
-                                            "/"
-                                            (replace-regexp-in-string ".*/" "" org-static-blog-image)))
-                  "-resize" "180x180"
-                  "\)"
-                  "-gravity" "SouthEast"
-                  "-geometry" "+80+80"
-                  "-composite"
-                  (shell-quote-argument output-path))))
+    (unless (file-exists-p output-path)
+      (call-process "convert" nil (get-buffer-create "*convert-output*") nil
+                    "-size" (concat (number-to-string org-static-blog-og-image-width) "x" 
+                                    (number-to-string org-static-blog-og-image-height))
+                    (concat "xc:" org-static-blog-og-image-background)
+                    "\("
+                    "-size" "1000x400"
+                    "-background" "none"
+                    "-font" org-static-blog-og-image-font
+                    "-pointsize" "60"
+                    "-fill" org-static-blog-og-image-text-color
+                    (concat "caption:" (filter-tags-from-title title))
+                    "\)"
+                    "-gravity" "NorthWest"
+                    "-geometry" "+120+160"
+                    "-composite"
+                    
+                    "-pointsize" "28"
+                    "-font" org-static-blog-og-image-font
+                    "-gravity" "SouthWest"
+                    "-fill" org-static-blog-og-image-text-color
+                    "-annotate" "+120+100" date-string
+                    "\("
+                    (expand-file-name (concat org-static-blog-publish-directory
+                                              "/"
+                                              (replace-regexp-in-string ".*/" "" org-static-blog-image)))
+                    "-resize" "180x180"
+                    "\)"
+                    "-gravity" "SouthEast"
+                    "-geometry" "+80+80"
+                    "-composite"
+                    (shell-quote-argument output-path)))))
 
 (defun org-static-blog-generate-all-og-images ()
   "Generate og:images for all published posts."
