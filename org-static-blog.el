@@ -876,18 +876,16 @@ If the first <p> is inside a <div ... class=\"...intro...\">, skip it and apply 
   "Remove the \"dcap\" class from all class attributes in HTML.
 If a class attribute becomes empty after removal, remove the attribute entirely."
   (require 'cl-lib)
-  (replace-regexp-in-string
-   "\\bclass=\\([\"']\\)\\([^\"']*\\)\\1"
-   (lambda (_match)
-     (let* ((quote (match-string 1))
-            (classes (match-string 2))
-            (parts (split-string classes "[[:space:]]+" t))
-            (remaining (cl-remove "dcap" parts :test #'string=))
-            (new (mapconcat #'identity remaining " ")))
-       (if (string= new "")
-           ""
-         (format "class=%s%s%s" quote new quote))))
-   html t t))
+  (let ((result html))
+    ;; Remove dcap from class attributes
+    (setq result (replace-regexp-in-string
+                  " dcap\\b" "" result))
+    (setq result (replace-regexp-in-string
+                  "\\bdcap " "" result))
+    ;; Remove class attribute entirely if it only contained dcap
+    (setq result (replace-regexp-in-string
+                  "class=\"dcap\"" "" result))
+    result))
 
 (defun org-static-blog--wrap-acronyms (html)
   "Wrap sequences of multiple uppercase letters in <span class=\"small-caps\"> tags.
@@ -897,6 +895,8 @@ Does not wrap acronyms inside href attributes or code blocks."
         (href-counter 0)
         (code-values '())
         (code-counter 0)
+        (class-values '())
+        (class-counter 0)
         (case-fold-search nil))
     ;; Protect href attributes
     (setq result (replace-regexp-in-string
@@ -909,6 +909,17 @@ Does not wrap acronyms inside href attributes or code blocks."
                       placeholder))
                   result))
     (setq href-values (nreverse href-values))
+    ;; Protect class attributes
+    (setq result (replace-regexp-in-string
+                  "class=\"\\([^\"]*\\)\""
+                  (lambda (match)
+                    (let ((class-content (match-string 1 match))
+                          (placeholder (format "class=\"__xclass_protected_%d__\"" class-counter)))
+                      (push class-content class-values)
+                      (setq class-counter (1+ class-counter))
+                      placeholder))
+                  result))
+    (setq class-values (nreverse class-values))
     ;; Protect code blocks (both <pre> and <code> tags)
     ;; We need to handle multiline content, so we can't use normal regex
     (let ((start 0))
@@ -957,6 +968,17 @@ Does not wrap acronyms inside href attributes or code blocks."
                                    href-val
                                    (substring result (+ pos (length placeholder)))))
               (setq pos (+ pos (length href-val))))))
+        (setq counter (1+ counter))))
+    ;; Restore class attributes
+    (let ((counter 0))
+      (dolist (class-val class-values)
+        (let ((placeholder (format "__xclass_protected_%d__" counter)))
+          (let ((pos 0))
+            (while (setq pos (string-match (regexp-quote placeholder) result pos))
+              (setq result (concat (substring result 0 pos)
+                                   class-val
+                                   (substring result (+ pos (length placeholder)))))
+              (setq pos (+ pos (length class-val))))))
         (setq counter (1+ counter))))
     result))
 
@@ -1013,7 +1035,6 @@ Posts are sorted in descending time."
     org-static-blog-publish-title
     (concat
      (when front-matter front-matter)
-     "</div>"
      "<div class=\"post-list\">\n"
      (apply 'concat (mapcar
                      (if org-static-blog-use-preview
