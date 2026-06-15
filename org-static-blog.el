@@ -888,8 +888,9 @@ If a class attribute becomes empty after removal, remove the attribute entirely.
     result))
 
 (defun org-static-blog--wrap-acronyms (html)
-  "Wrap sequences of multiple uppercase letters in <span class=\"small-caps\"> tags.
-Does not wrap acronyms inside href attributes or code blocks."
+  "Wraps sequences of multiple uppercase letters in HTML in a small-caps span.
+Looks like <span class=\"small-caps\">.  Does not wrap acronyms inside
+href attributes or code blocks."
   (let ((result html)
         (href-values '())
         (href-counter 0)
