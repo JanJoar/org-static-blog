@@ -955,14 +955,14 @@ Looks like <span class=\"small-caps\">.  Does not wrap acronyms inside
 href attributes or code blocks."
   (let ((case-fold-search nil))
     (let* ((href-result (org-static-blog--protect-attribute html "href" "xhref"))
-           (result (nth 0 href-result))
-           (href-values (nth 1 href-result))
+           (result (car href-result))
+           (href-values (cadr href-result))
            (class-result (org-static-blog--protect-attribute result "class" "xclass"))
-           (result (nth 0 class-result))
-           (class-values (nth 1 class-result))
+           (result (car class-result))
+           (class-values (cadr class-result))
            (code-result (org-static-blog--protect-code-blocks result))
-           (result (nth 0 code-result))
-           (code-values (nth 1 code-result)))
+           (result (car code-result))
+           (code-values (cadr code-result)))
       (setq result (replace-regexp-in-string
                     "\\([A-Z]\\(?:\\(?:&\\(?:amp;\\)?\\|[.-]\\)?[A-Z0-9]\\)+\\)"
                     (lambda (match)
