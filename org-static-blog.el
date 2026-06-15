@@ -954,7 +954,6 @@ PREFIX is the placeholder prefix (e.g., 'xcode', 'xhref', 'xclass')."
 Looks like <span class=\"small-caps\">.  Does not wrap acronyms inside
 href attributes or code blocks."
   (let ((case-fold-search nil))
-    ;; Protect attributes and code blocks
     (let* ((href-result (org-static-blog--protect-attribute html "href" "xhref"))
            (result (nth 0 href-result))
            (href-values (nth 1 href-result))
@@ -964,7 +963,6 @@ href attributes or code blocks."
            (code-result (org-static-blog--protect-code-blocks result))
            (result (nth 0 code-result))
            (code-values (nth 1 code-result)))
-      ;; Wrap all sequences of uppercase letters (optionally with &/&amp;, ., or - between them)
       (setq result (replace-regexp-in-string
                     "\\([A-Z]\\(?:\\(?:&\\(?:amp;\\)?\\|[.-]\\)?[A-Z0-9]\\)+\\)"
                     (lambda (match)
