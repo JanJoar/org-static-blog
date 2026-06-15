@@ -966,7 +966,8 @@ href attributes or code blocks."
       (setq result (replace-regexp-in-string
                     "\\([A-Z]\\(?:\\(?:&\\(?:amp;\\)?\\|[.-]\\)?[A-Z0-9]\\)+\\)"
                     (lambda (match)
-                      (concat "<span class=\"small-caps\">" (downcase (match-string 1 match)) "</span>"))
+                      (concat "<span class=\"small-caps\">"
+                              (downcase (match-string 1 match)) "</span>"))
                     result t))
       ;; Restore all protected content
       (setq result (org-static-blog--restore-protected result code-values "xcode"))
