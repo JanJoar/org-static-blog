@@ -887,6 +887,23 @@ If a class attribute becomes empty after removal, remove the attribute entirely.
                   "class=\"dcap\"" "" result))
     result))
 
+(defun org-static-blog--restore-protected (result protected-values prefix)
+  "Restore protected content by replacing placeholders.
+RESULT is the string to process.
+PROTECTED-VALUES is a list of original values to restore.
+PREFIX is the placeholder prefix (e.g., 'xcode', 'xhref', 'xclass')."
+  (let ((counter 0))
+    (dolist (val protected-values)
+      (let ((placeholder (format "__%s_protected_%d__" prefix counter)))
+        (let ((pos 0))
+          (while (setq pos (string-match (regexp-quote placeholder) result pos))
+            (setq result (concat (substring result 0 pos)
+                                 val
+                                 (substring result (+ pos (length placeholder)))))
+            (setq pos (+ pos (length val))))))
+      (setq counter (1+ counter))))
+  result)
+
 (defun org-static-blog--wrap-acronyms (html)
   "Wraps sequences of multiple uppercase letters in HTML in a small-caps span.
 Looks like <span class=\"small-caps\">.  Does not wrap acronyms inside
@@ -948,39 +965,10 @@ href attributes or code blocks."
                   (lambda (match)
                     (concat "<span class=\"small-caps\">" (downcase (match-string 1 match)) "</span>"))
                   result t))
-    ;; Restore code blocks
-    (let ((counter 0))
-      (dolist (code-val code-values)
-        (let ((placeholder (format "__xcode_protected_%d__" counter)))
-          (let ((pos 0))
-            (while (setq pos (string-match (regexp-quote placeholder) result pos))
-              (setq result (concat (substring result 0 pos)
-                                   code-val
-                                   (substring result (+ pos (length placeholder)))))
-              (setq pos (+ pos (length code-val))))))
-        (setq counter (1+ counter))))
-    ;; Restore href values
-    (let ((counter 0))
-      (dolist (href-val href-values)
-        (let ((placeholder (format "__xhref_protected_%d__" counter)))
-          (let ((pos 0))
-            (while (setq pos (string-match (regexp-quote placeholder) result pos))
-              (setq result (concat (substring result 0 pos)
-                                   href-val
-                                   (substring result (+ pos (length placeholder)))))
-              (setq pos (+ pos (length href-val))))))
-        (setq counter (1+ counter))))
-    ;; Restore class attributes
-    (let ((counter 0))
-      (dolist (class-val class-values)
-        (let ((placeholder (format "__xclass_protected_%d__" counter)))
-          (let ((pos 0))
-            (while (setq pos (string-match (regexp-quote placeholder) result pos))
-              (setq result (concat (substring result 0 pos)
-                                   class-val
-                                   (substring result (+ pos (length placeholder)))))
-              (setq pos (+ pos (length class-val))))))
-        (setq counter (1+ counter))))
+    ;; Restore all protected content
+    (setq result (org-static-blog--restore-protected result code-values "xcode"))
+    (setq result (org-static-blog--restore-protected result href-values "xhref"))
+    (setq result (org-static-blog--restore-protected result class-values "xclass"))
     result))
 
 (defun org-static-blog-render-post-content (post-filename)
