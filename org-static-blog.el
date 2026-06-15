@@ -887,6 +887,51 @@ If a class attribute becomes empty after removal, remove the attribute entirely.
                   "class=\"dcap\"" "" result))
     result))
 
+(defun org-static-blog--protect-attribute (result attr-name prefix)
+  "Protect an HTML attribute by replacing values with placeholders.
+RESULT is the HTML string to process.
+ATTR-NAME is the attribute name (e.g., 'href', 'class').
+PREFIX is the placeholder prefix (e.g., 'xhref', 'xclass').
+Returns (list new-result protected-values)."
+  (let ((values '())
+        (counter 0))
+    (setq result (replace-regexp-in-string
+                  (format "%s=\"\\([^\"]*\\)\"" attr-name)
+                  (lambda (match)
+                    (let ((content (match-string 1 match))
+                          (placeholder (format "%s=\"__%s_protected_%d__\"" attr-name prefix counter)))
+                      (push content values)
+                      (setq counter (1+ counter))
+                      placeholder))
+                  result))
+    (list result (nreverse values))))
+
+(defun org-static-blog--protect-code-blocks (result)
+  "Protect code blocks (<pre> and <code>) by replacing with placeholders.
+RESULT is the HTML string to process.
+Returns (list new-result protected-values)."
+  (let ((values '())
+        (counter 0)
+        (start 0))
+    (while (string-match "<\\(?:pre\\|code\\)\\(?:[^>]*\\)>" result start)
+      (let* ((tag-start (match-beginning 0))
+             (tag-end (match-end 0))
+             (tag (match-string 0 result))
+             (is-pre (string-match "^<pre" tag))
+             (close-tag (if is-pre "</pre>" "</code>"))
+             (close-pos (string-match (regexp-quote close-tag) result tag-end)))
+        (if close-pos
+            (let* ((code-content (substring result tag-start (+ close-pos (length close-tag))))
+                   (placeholder (format "__xcode_protected_%d__" counter)))
+              (push code-content values)
+              (setq result (concat (substring result 0 tag-start)
+                                   placeholder
+                                   (substring result (+ close-pos (length close-tag)))))
+              (setq counter (1+ counter))
+              (setq start (+ tag-start (length placeholder))))
+          (setq start tag-end))))
+    (list result (nreverse values))))
+
 (defun org-static-blog--restore-protected (result protected-values prefix)
   "Restore protected content by replacing placeholders.
 RESULT is the string to process.
@@ -908,68 +953,28 @@ PREFIX is the placeholder prefix (e.g., 'xcode', 'xhref', 'xclass')."
   "Wraps sequences of multiple uppercase letters in HTML in a small-caps span.
 Looks like <span class=\"small-caps\">.  Does not wrap acronyms inside
 href attributes or code blocks."
-  (let ((result html)
-        (href-values '())
-        (href-counter 0)
-        (code-values '())
-        (code-counter 0)
-        (class-values '())
-        (class-counter 0)
-        (case-fold-search nil))
-    ;; Protect href attributes
-    (setq result (replace-regexp-in-string
-                  "href=\"\\([^\"]*\\)\""
-                  (lambda (match)
-                    (let ((href-content (match-string 1 match))
-                          (placeholder (format "href=\"__xhref_protected_%d__\"" href-counter)))
-                      (push href-content href-values)
-                      (setq href-counter (1+ href-counter))
-                      placeholder))
-                  result))
-    (setq href-values (nreverse href-values))
-    ;; Protect class attributes
-    (setq result (replace-regexp-in-string
-                  "class=\"\\([^\"]*\\)\""
-                  (lambda (match)
-                    (let ((class-content (match-string 1 match))
-                          (placeholder (format "class=\"__xclass_protected_%d__\"" class-counter)))
-                      (push class-content class-values)
-                      (setq class-counter (1+ class-counter))
-                      placeholder))
-                  result))
-    (setq class-values (nreverse class-values))
-    ;; Protect code blocks (both <pre> and <code> tags)
-    ;; We need to handle multiline content, so we can't use normal regex
-    (let ((start 0))
-      (while (string-match "<\\(?:pre\\|code\\)\\(?:[^>]*\\)>" result start)
-        (let* ((tag-start (match-beginning 0))
-               (tag-end (match-end 0))
-               (tag (match-string 0 result))
-               (is-pre (string-match "^<pre" tag))
-               (close-tag (if is-pre "</pre>" "</code>"))
-               (close-pos (string-match (regexp-quote close-tag) result tag-end)))
-          (if close-pos
-              (let* ((code-content (substring result tag-start (+ close-pos (length close-tag))))
-                     (placeholder (format "__xcode_protected_%d__" code-counter)))
-                (push code-content code-values)
-                (setq result (concat (substring result 0 tag-start)
-                                     placeholder
-                                     (substring result (+ close-pos (length close-tag)))))
-                (setq code-counter (1+ code-counter))
-                (setq start (+ tag-start (length placeholder))))
-            (setq start tag-end)))))
-    (setq code-values (nreverse code-values))
-    ;; Wrap all sequences of uppercase letters (optionally with &/&amp;, ., or - between them)
-    (setq result (replace-regexp-in-string
-                  "\\([A-Z]\\(?:\\(?:&\\(?:amp;\\)?\\|[.-]\\)?[A-Z0-9]\\)+\\)"
-                  (lambda (match)
-                    (concat "<span class=\"small-caps\">" (downcase (match-string 1 match)) "</span>"))
-                  result t))
-    ;; Restore all protected content
-    (setq result (org-static-blog--restore-protected result code-values "xcode"))
-    (setq result (org-static-blog--restore-protected result href-values "xhref"))
-    (setq result (org-static-blog--restore-protected result class-values "xclass"))
-    result))
+  (let ((case-fold-search nil))
+    ;; Protect attributes and code blocks
+    (let* ((href-result (org-static-blog--protect-attribute html "href" "xhref"))
+           (result (nth 0 href-result))
+           (href-values (nth 1 href-result))
+           (class-result (org-static-blog--protect-attribute result "class" "xclass"))
+           (result (nth 0 class-result))
+           (class-values (nth 1 class-result))
+           (code-result (org-static-blog--protect-code-blocks result))
+           (result (nth 0 code-result))
+           (code-values (nth 1 code-result)))
+      ;; Wrap all sequences of uppercase letters (optionally with &/&amp;, ., or - between them)
+      (setq result (replace-regexp-in-string
+                    "\\([A-Z]\\(?:\\(?:&\\(?:amp;\\)?\\|[.-]\\)?[A-Z0-9]\\)+\\)"
+                    (lambda (match)
+                      (concat "<span class=\"small-caps\">" (downcase (match-string 1 match)) "</span>"))
+                    result t))
+      ;; Restore all protected content
+      (setq result (org-static-blog--restore-protected result code-values "xcode"))
+      (setq result (org-static-blog--restore-protected result href-values "xhref"))
+      (setq result (org-static-blog--restore-protected result class-values "xclass"))
+      result)))
 
 (defun org-static-blog-render-post-content (post-filename)
   "Render blog content as bare HTML without header."
