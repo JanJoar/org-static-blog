@@ -1015,9 +1015,10 @@ posts as full text posts."
     (org-static-blog-assemble-multipost-page
      (concat-to-dir org-static-blog-publish-directory org-static-blog-index-file)
      (last post-filenames org-static-blog-index-length)
+     org-static-blog-publish-title
      org-static-blog-index-front-matter)))
 
-(defun org-static-blog-assemble-multipost-page (pub-filename post-filenames &optional front-matter)
+(defun org-static-blog-assemble-multipost-page (pub-filename post-filenames &optional title front-matter)
   "Assemble a page that contains multiple posts one after another.
 Posts are sorted in descending time."
   (setq post-filenames (sort post-filenames (lambda (x y) (time-less-p (org-static-blog-get-date y)
@@ -1025,7 +1026,7 @@ Posts are sorted in descending time."
   (org-static-blog-with-find-file
    pub-filename
    (org-static-blog-template
-    (if front-matter (filter-tags-from-title front-matter)
+    (if title (filter-tags-from-title title)
       org-static-blog-publish-title)
     (concat
      (when front-matter front-matter)
@@ -1245,7 +1246,8 @@ archive headline."
      (concat-to-dir org-static-blog-publish-directory
 		    (concat "tag-" (downcase (car tag)) ".html"))
      (cdr tag)
-     (concat "<h1 class=\"title\">" (org-static-blog-gettext 'posts-tagged) " \“" (car tag) "\”</h1>"))))
+     (concat "<h1 class=\"title\">" (org-static-blog-gettext 'posts-tagged) " \“" (car tag) "\”:</h1>")
+     (concat "<h1 class=\"title\">" (org-static-blog-gettext 'posts-tagged) " <i>\“" (car tag) "</i>\”</h1>"))))
 
 (defun org-static-blog-assemble-tags-archive-tag (tag)
   "Assemble single TAG for all filenames."
