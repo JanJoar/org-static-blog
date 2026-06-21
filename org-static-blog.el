@@ -1025,7 +1025,8 @@ Posts are sorted in descending time."
   (org-static-blog-with-find-file
    pub-filename
    (org-static-blog-template
-    org-static-blog-publish-title
+    (if front-matter (filter-tags-from-title front-matter)
+      org-static-blog-publish-title)
     (concat
      (when front-matter front-matter)
      "<div class=\"post-list\">\n"
