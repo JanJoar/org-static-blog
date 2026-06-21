@@ -1210,7 +1210,7 @@ blog post, but no post body."
     (org-static-blog-with-find-file
      archive-filename
      (org-static-blog-template
-      org-static-blog-publish-title
+      (org-static-blog-gettext 'archive)
       (concat
        "<h1 class=\"title\">" (org-static-blog-gettext 'archive) "</h1>\n"
        org-static-blog-archive-front-matter "\n"
