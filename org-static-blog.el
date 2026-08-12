@@ -11,9 +11,9 @@
 
 ;;; Commentary:
 
-;; Static blog generators are a dime a dozen. This is one more, which
-;; focuses on being simple. All files are simple org-mode files in a
-;; directory. The only requirement is that every org file must have a
+;; Static blog generators are a dime a dozen.  This is one more, which
+;; focuses on being simple.  All files are simple org-mode files in a
+;; directory.  The only requirement is that every org file must have a
 ;; #+TITLE and a #+DATE, and optionally, #+FILETAGS.
 
 ;; This file is also available from marmalade and melpa-stable.
@@ -32,10 +32,10 @@
 ;; pull request on Github.
 
 ;; Finally, I would like to remind you that I am developing this
-;; project for free, and in my spare time. While I try to be as
+;; project for free, and in my spare time.  While I try to be as
 ;; accomodating as possible, I can not guarantee a timely response to
-;; issues. Publishing Open Source Software on Github does not imply an
-;; obligation to *fix your problem right now*. Please be civil.
+;; issues.  Publishing Open Source Software on Github does not imply
+;; an obligation to *fix your problem right now*.  Please be civil.
 
 ;;; Code:
 
