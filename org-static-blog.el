@@ -1027,9 +1027,10 @@ posts as full text posts."
      (concat-to-dir org-static-blog-publish-directory org-static-blog-index-file)
      (last post-filenames org-static-blog-index-length)
      org-static-blog-publish-title
-     org-static-blog-index-front-matter)))
+     org-static-blog-index-front-matter
+     org-static-blog-index-end-matter)))
 
-(defun org-static-blog-assemble-multipost-page (pub-filename post-filenames &optional title front-matter)
+(defun org-static-blog-assemble-multipost-page (pub-filename post-filenames &optional title front-matter end-matter)
   "Assemble a page that contains multiple posts one after another.
 Posts are sorted in descending time."
   (setq post-filenames (sort post-filenames (lambda (x y) (time-less-p (org-static-blog-get-date y)
@@ -1046,7 +1047,8 @@ Posts are sorted in descending time."
                      (if org-static-blog-use-preview
                          'org-static-blog-get-preview
                        'org-static-blog-get-post-content) post-filenames))
-     "</div>"))))
+     "</div>"
+     (when end-matter end-matter)))))
 
 (defun org-static-blog-get-edit-date (post-filename)
   "Gets the date for the last revision of POST-FILENAME."
