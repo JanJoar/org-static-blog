@@ -184,12 +184,12 @@ per-tag RSS feeds."
   :safe t)
 
 (defcustom org-static-blog-post-preamble-text ""
-  "HTML to put before every post"
+  "HTML to put before every post."
   :type '(string)
   :safe t)
 
 (defcustom org-static-blog-post-postamble-text ""
-  "HTML to put before every post"
+  "HTML to put before every post."
   :type '(string)
   :safe t)
 
