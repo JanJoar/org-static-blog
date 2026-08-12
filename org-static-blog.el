@@ -4,8 +4,8 @@
 ;; Contrib: Shmavon Gazanchyan, Rafał -rsm- Marek, neeasade,
 ;; Michael Cardell Widerkrantz, Matthew Bauer, Winny, Yauhen Makei,
 ;; luhuaei, zngguvnf, Qiantan Hong, Jonas Bernoulli, Théo Jacquin,
-;; K. Scarlet, zsxh
-;; URL: https://github.com/bastibe/org-static-blog
+;; K. Scarlet, zsxh, Joar von Arndt
+;; URL: https://codeberg.org/Joar/org-static-blog
 ;; Version: 1.7.0
 ;; Package-Requires: ((emacs "24.3"))
 
