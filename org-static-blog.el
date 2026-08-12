@@ -178,6 +178,11 @@ per-tag RSS feeds."
   :type '(string)
   :safe t)
 
+(defcustom org-static-blog-index-end-matter ""
+  "HTML to put at the beginning of the index page."
+  :type '(string)
+  :safe t)
+
 (defcustom org-static-blog-archive-front-matter ""
   "HTML to put at the beginning of the archive page."
   :type '(string)
