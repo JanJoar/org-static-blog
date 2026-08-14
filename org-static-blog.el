@@ -446,6 +446,7 @@ Only if og tags are enabled. It can be overridden with the
 
    (when org-static-blog-enable-og-tags
      (concat
+      "<meta property=\"og:site_name\" content=\"" org-static-blog-publish-title "\">\n"
       "<meta property=\"og:title\" content=\"" tTitle "\">\n"
       "<meta property=\"og:type\" content=\"article\" />\n"
       (when tDescription

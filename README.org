@@ -23,6 +23,7 @@ features that my fork provides:
 - Archive front matter
 - End matter for multipost pages, with a variable for index front
   matter.
+- Supports the ~og-site_name~ open graph tag.
 
 For how I integrate this fork into website generation see the website
 [[https://joarvarndt.se/website][colophon]].
