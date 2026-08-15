@@ -776,8 +776,8 @@ published HTML version of the post."
 
 (defun org-static-blog-get-post-public-path (post-filename)
   "Return post filepath in public directory.
-  This function retrieves relative path to the post file in posts
-  or drafts directories to published HTML version of the post."
+This function retrieves relative path to POST-FILENAME in posts
+or drafts directories to published HTML version of the post."
   (let* ((true-post-filename (file-truename post-filename))
          (true-posts-directory (file-truename org-static-blog-posts-directory))
          (true-drafts-directory (file-truename org-static-blog-drafts-directory))
@@ -787,14 +787,15 @@ published HTML version of the post."
     (concat (file-name-sans-extension (file-relative-name true-post-filename root-dir)) ".html")))
 
 (defun org-static-blog-get-relative-path (post-filename)
-  "Removes absolute directory path from POST-FILENAME and changes file extention
-from `.org` to `.html`. Return filepath to HTML file relative to posts or drafts directories.
+  "Return filepath to HTML file relative to posts or drafts directories.
+Removes absolute directory path from POST-FILENAME and changes file
+extention from `.org` to `.html`.
 
 Works with both posts and drafts directories.
 
 For example, when `org-static-blog-posts-directory` is set to '~/blog/posts'
-and `post-filename` is passed as '~/blog/posts/my-life-update.org' then the function
-will return 'my-life-update.html'."
+and `post-filename` is passed as '~/blog/posts/my-life-update.org' then the
+function will return 'my-life-update.html'."
   (concat (file-name-sans-extension (file-relative-name post-filename org-static-blog-posts-directory))
 	  ".html"))
 
