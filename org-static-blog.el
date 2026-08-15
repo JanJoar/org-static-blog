@@ -603,10 +603,12 @@ existed before)."
     (with-temp-buffer
       (insert-file-contents post-filename)
       (goto-char (point-min))
-      (setq post-filename (if (search-forward-regexp "^\\#\\+title:[ ]*\\(.+\\)$" nil t)
-                              (match-string 1)
-                            (warn "%s file does not have a title, using %s as the title" post-filename post-filename)
-                            post-filename))
+      (setq post-filename
+	    (if (search-forward-regexp "^\\#\\+title:[ ]*\\(.+\\)$" nil t)
+                (match-string 1)
+              (warn "%s file does not have a title, using %s as the title"
+		    post-filename post-filename)
+              post-filename))
       (if public
           (filter-tags-from-title post-filename)
         post-filename))))
