@@ -446,14 +446,14 @@ Only if og tags are enabled. It can be overridden with the
    "<link rel=\"canonical\" href=\"" (if tUrl
                                          tUrl
                                        (org-static-blog-get-absolute-url tFilename))
-   "\">"
+   "\">\n"
 
    (when org-static-blog-enable-og-tags
      (concat
       "<meta property=\"og:site_name\" content=\"" org-static-blog-publish-title "\">\n"
       "<meta property=\"og:title\" content=\"" tTitle "\">\n"
       "<meta property=\"og:type\" content=\"article\" />\n"
-      "<meta property=\"og:locale\" content=\"" org-static-blog-langcode "\">"
+      "<meta property=\"og:locale\" content=\"" org-static-blog-langcode "\">\n"
       (when tDescription
 	(format "<meta property=\"og:description\" content=\"%s\">\n" tDescription))
       (when tUrl
