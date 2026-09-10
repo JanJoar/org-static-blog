@@ -471,7 +471,7 @@ Only if og tags are enabled. It can be overridden with the
    "<div id=\"preamble\" class=\"status\">"
    org-static-blog-page-preamble
    "</div>\n"
-   "<div id=\"content\">\n"
+   "<main id=\"content\">\n"
    tContent
    "</div>\n"
    "<div id=\"postamble\" class=\"status\">"
@@ -751,7 +751,7 @@ Preamble and Postamble are excluded, too."
          (if exclude-title
              (progn (search-forward "<h1 class=\"post-title\">")
                     (search-forward "</h1>"))
-           (search-forward "<div id=\"content\">"))
+           (search-forward "<main id=\"content\">"))
          (point))
        (progn
          (goto-char (point-max))
