@@ -429,7 +429,7 @@ Only if og tags are enabled. It can be overridden with the
   "Concat filename to another path interpreted as a directory."
   (concat (file-name-as-directory dir) filename))
 
-(defun org-static-blog-template (tTitle tContent &optional tDescription tImage tUrl)
+(defun org-static-blog-template (tTitle tContent tFilename &optional tDescription tImage tUrl)
   "Create the template that is used to generate the static pages."
   (concat
    "<!DOCTYPE html>\n"
@@ -443,6 +443,10 @@ Only if og tags are enabled. It can be overridden with the
    "      href=\"" (org-static-blog-get-absolute-url org-static-blog-rss-file) "\"\n"
    "      title=\"RSS feed for " org-static-blog-publish-url "\">\n"
    "<title>" tTitle "</title>\n"
+   "<link rel=\"canonical\" href=\"" (if tUrl
+                                         tUrl
+                                       (org-static-blog-get-absolute-url tFilename))
+   "\">"
 
    (when org-static-blog-enable-og-tags
      (concat
@@ -816,14 +820,15 @@ The index, archive, tags, and RSS feed are not updated."
      (org-static-blog-post-preamble post-filename)
      (org-static-blog-render-post-content post-filename)
      (org-static-blog-post-postamble post-filename))
+    (org-static-blog-get-post-url post-filename)
     (org-static-blog-get-description post-filename)
     (org-static-blog-get-image post-filename)
     (org-static-blog-get-post-url post-filename))))
 
 (defun org-static-blog--add-dropcap-to-first-p (html)
   "Return HTML with the first <p> element (not inside a div.intro) having class \"dcap\".
-If the <p> already has a class attribute, append \"dcap\" to it unless it's already present.
-If the first <p> is inside a <div ... class=\"...intro...\">, skip it and apply to the next <p>."
+  If the <p> already has a class attribute, append \"dcap\" to it unless it's already present.
+  If the first <p> is inside a <div ... class=\"...intro...\">, skip it and apply to the next <p>."
   (let ((pos 0)
         found-start found-end found-attrs)
     ;; Find the first <p> that is not inside an open <div class="...intro...">
@@ -1052,7 +1057,8 @@ Posts are sorted in descending time."
                          'org-static-blog-get-preview
                        'org-static-blog-get-post-content) post-filenames))
      "</div>"
-     (when end-matter end-matter)))))
+     (when end-matter end-matter))
+    (file-name-nondirectory pub-filename))))
 
 (defun org-static-blog-get-edit-date (post-filename)
   "Gets the date for the last revision of POST-FILENAME."
@@ -1232,7 +1238,8 @@ blog post, but no post body."
       (concat
        "<h1 class=\"title\">" (org-static-blog-gettext 'archive) "</h1>\n"
        org-static-blog-archive-front-matter "\n"
-       (apply 'concat (mapcar 'org-static-blog-get-post-summary post-filenames)))))))
+       (apply 'concat (mapcar 'org-static-blog-get-post-summary post-filenames)))
+      org-static-blog-archive-file))))
 
 (defun org-static-blog-get-post-summary (post-filename)
   "Assemble post summary for an archive page.
@@ -1288,7 +1295,8 @@ blog post, sorted by tags, but no post body."
       org-static-blog-publish-title
       (concat
        "<h1 class=\"title\">" (org-static-blog-gettext 'tags) "</h1>\n"
-       (apply 'concat (mapcar 'org-static-blog-assemble-tags-archive-tag tag-tree)))))))
+       (apply 'concat (mapcar 'org-static-blog-assemble-tags-archive-tag tag-tree)))
+      org-static-blog-tags-file))))
 
 (defun org-static-blog-open-previous-post ()
   "Opens previous blog post."
