@@ -474,7 +474,7 @@ Only if og tags are enabled. It can be overridden with the
    "</div>\n"
    "<main id=\"content\">\n"
    tContent
-   "</div>\n"
+   "</main>\n"
    "<div id=\"postamble\" class=\"status\">"
    org-static-blog-page-postamble
    "</div>\n"
