@@ -24,6 +24,11 @@ features that my fork provides:
 - End matter for multipost pages, with a variable for index front
   matter.
 - Supports the ~og-site_name~ open graph tag.
+- Supports "canonical" links for better SEO.
+- Uses W3C ~<main>~-elements instead of merely ~<div id="content">~.
+- Supports having symlinks in ~org-static-blog-posts-directory~.
+- Only writes a new RSS file when changes are made (no more
+  unnecessary ~<lastBuildDate>~-updates).
 
 For how I integrate this fork into website generation see the website
 [[https://joarvarndt.se/website][colophon]]. Since configuration is performed at build time, it is easy
