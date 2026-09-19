@@ -26,6 +26,16 @@ Defaults to today's date if DATE is not given."
          (aref calendar-french-month-name-array (1- m))
          y)))))
 
+(defun calendar-french-date-year (&optional date)
+  "Get the current year in the French Revolutionary Calendar."
+  (let* ((french-date (calendar-french-from-absolute
+                       (calendar-absolute-from-gregorian
+                        (or date (calendar-current-date)))))
+         (y (calendar-extract-year french-date)))
+    (cond
+     ((< y 1) "")
+     (t (format "%d" y)))))
+
 (defun filter-tags-from-title (title)
   "Remove any <i> tags from TITLE."
   (replace-regexp-in-string "<[^>]*>" "" title))
@@ -56,7 +66,7 @@ Does not generate an image when POST-FILENAME has a `#+image:` header."
       (unless (file-exists-p output-path)
         (call-process "convert" nil (get-buffer-create "*convert-output*") nil
                       "-size" (concat (number-to-string org-static-blog-og-image-width) "x"
-                      (number-to-string org-static-blog-og-image-height))
+                                      (number-to-string org-static-blog-og-image-height))
                       (concat "xc:" org-static-blog-og-image-background)
                       "\("
                       "-size" "1000x400"
