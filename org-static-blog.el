@@ -785,13 +785,20 @@ published HTML version of the post."
   "Return post filepath in public directory.
 This function retrieves relative path to POST-FILENAME in posts
 or drafts directories to published HTML version of the post."
-  (let* ((true-post-filename (file-truename post-filename))
-         (true-posts-directory (file-truename org-static-blog-posts-directory))
-         (true-drafts-directory (file-truename org-static-blog-drafts-directory))
-         (root-dir (cond ((string-prefix-p true-posts-directory true-post-filename) true-posts-directory)
-                         ((string-prefix-p true-drafts-directory true-post-filename) true-drafts-directory)
-                         (t org-static-blog-hidden-directory))))
-    (concat (file-name-sans-extension (file-relative-name true-post-filename root-dir)) ".html")))
+  (let* ((post-filename (expand-file-name post-filename))
+         (posts-directory (file-name-as-directory
+                           (expand-file-name org-static-blog-posts-directory)))
+         (drafts-directory (file-name-as-directory
+                            (expand-file-name org-static-blog-drafts-directory)))
+         ;; Keep the logical path below POSTS-DIRECTORY.  Resolving the
+         ;; filename with `file-truename' first makes a symlink escape
+         ;; POSTS-DIRECTORY and produces an incorrect public path.
+         (root-dir (cond ((string-prefix-p posts-directory post-filename)
+                         posts-directory)
+                        ((string-prefix-p drafts-directory post-filename)
+                         drafts-directory)
+                        (t org-static-blog-hidden-directory))))
+    (concat (file-name-sans-extension (file-relative-name post-filename root-dir)) ".html")))
 
 (defun org-static-blog-get-relative-path (post-filename)
   "Return filepath to HTML file relative to posts or drafts directories.
