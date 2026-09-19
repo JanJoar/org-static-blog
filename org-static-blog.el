@@ -1151,6 +1151,13 @@ followed by the HTML code for comments."
   (concat-to-dir org-static-blog-publish-directory
                  (concat tag (when tag "-") org-static-blog-rss-file)))
 
+(defun org-static-blog--rss-content-without-build-date (contents)
+  "Return RSS CONTENTS with its generated build date removed."
+  (replace-regexp-in-string
+   "<lastBuildDate>[^<]*</lastBuildDate>"
+   "<lastBuildDate></lastBuildDate>"
+   contents t t))
+
 (defun org-static-blog--write-rss (items &optional tag)
   "Generates an RSS file for the given TAG, or for all tags is TAG is nil."
   (let ((title (format "%s%s"
@@ -1160,9 +1167,9 @@ followed by the HTML code for comments."
                      org-static-blog-publish-url
                      (if tag (concat "/tag-" (downcase tag) ".html") "")))
         (items (sort items (lambda (x y) (time-less-p (car y) (car x))))))
-    (org-static-blog-with-find-file
-     (org-static-blog--rss-filename tag)
-     (concat "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
+    (let* ((filename (org-static-blog--rss-filename tag))
+           (contents
+            (concat "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n"
 	     "<rss version=\"2.0\" xmlns:atom=\"http://www.w3.org/2005/Atom\">\n"
 	     "<channel>\n"
 	     "<title><![CDATA[" title "]]></title>\n"
@@ -1174,7 +1181,15 @@ followed by the HTML code for comments."
              org-static-blog-rss-extra
 	     (apply 'concat (mapcar 'cdr (org-static-blog--prune-items items)))
 	     "</channel>\n"
-	     "</rss>\n"))))
+	     "</rss>\n")))
+      (unless (and (file-exists-p filename)
+                   (with-temp-buffer
+                     (insert-file-contents filename)
+                     (string= (org-static-blog--rss-content-without-build-date
+                               (buffer-string))
+                              (org-static-blog--rss-content-without-build-date
+                               contents))))
+        (org-static-blog-with-find-file filename contents)))))
 
 (defun org-static-blog-assemble-rss ()
   "Assemble the blog RSS feed.
