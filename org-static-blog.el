@@ -1154,16 +1154,21 @@ the taglist, in a <div id=\"taglist\">...</div> block."
                       (remove org-static-blog-rss-excluded-tag
                               (org-static-blog-get-tags post-filename)))))
     (when (and tags org-static-blog-enable-tags)
-      (setq taglist-content (concat "<a href=\""
-                                    (org-static-blog-get-absolute-url org-static-blog-tags-file)
-                                    "\">" (org-static-blog-gettext 'tags) "</a>: "
-                                    "<tagtext>"))
-      (dolist (tag tags)
-        (setq taglist-content (concat taglist-content "<a href=\""
-                                      (org-static-blog-get-absolute-url (concat "tag-" (downcase tag) ".html"))
-                                      "\">" tag "</a> ")))
-      (setq taglist-content (concat taglist-content "</tagtext>")))
-    taglist-content))
+      (concat
+       "<a href=\"" (org-static-blog-get-absolute-url org-static-blog-tags-file)
+       "\"><span class=\"tag-label\">" (org-static-blog-gettext 'tags)
+       "</span></a><span class=\"tag-separator\">: </span>"
+       "<span class=\"taglist__tags\">"
+       (let ((tag-htmls '()))
+         (dotimes (i (length tags))
+           (let ((tag (nth i tags)))
+             (push (concat "<a href=\""
+                           (org-static-blog-get-absolute-url (concat "tag-" (downcase tag) ".html"))
+                           "\" class=\"tag\" data-tag=\"" (downcase tag)
+                           "\" data-index=\"" (number-to-string i) "\">" tag "</a> ")
+                   tag-htmls)))
+         (apply #'concat (nreverse tag-htmls)))
+       "</span>"))))
 
 (defun org-static-blog-post-postamble (post-filename)
   "Return the tag list and comment box at the end of POST-FILENAME.
