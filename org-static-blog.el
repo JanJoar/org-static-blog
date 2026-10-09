@@ -260,6 +260,19 @@ and `org-static-blog-preview-link-p'."
   :type '(boolean)
   :safe t)
 
+(defcustom org-static-blog-preview-source 'paragraph
+  "Where the preview text of a post on multipost pages comes from.
+
+`paragraph' uses the first paragraph of the rendered post (see
+`org-static-blog-preview-start' and `org-static-blog-preview-end').
+`description' uses the `#+description:' keyword of the post; posts
+without one show no preview text.
+
+Only applies when `org-static-blog-use-preview' is non-nil."
+  :type '(choice (const :tag "First paragraph" paragraph)
+                 (const :tag "Post description" description))
+  :safe t)
+
 (defcustom org-static-blog-preview-start nil
   "Marker indicating the beginning of a post's preview.
 
@@ -751,12 +764,18 @@ and display an ellipsis.
 Preamble and Postamble are excluded, too."
   (with-temp-buffer
     (insert-file-contents (org-static-blog-matching-publish-filename post-filename))
-    (let ((post-title (org-static-blog-get-title post-filename))
+    (let* ((post-title (org-static-blog-get-title post-filename))
           (post-date (org-static-blog-get-date-string post-filename))
           (post-taglist (org-static-blog-post-taglist post-filename))
           (post-ellipsis "")
-          (preview-region (org-static-blog--remove-dropcap-class (org-static-blog--preview-region))))
-      (when (and preview-region (search-forward "<p>" nil t))
+          (description-p (eq org-static-blog-preview-source 'description))
+          (preview-region
+           (if description-p
+               (let ((description (org-static-blog-get-description post-filename)))
+                 (when description
+                   (concat "<p>" (org-html-encode-plain-text description) "</p>")))
+             (org-static-blog--remove-dropcap-class (org-static-blog--preview-region)))))
+      (when (and preview-region (not description-p) (search-forward "<p>" nil t))
         (setq post-ellipsis
               (concat (when org-static-blog-preview-link-p
                         (format "<a class=ellipsis-link href=\"%s\">"

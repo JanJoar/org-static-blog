@@ -29,7 +29,8 @@ features that my fork provides:
 - Supports having symlinks in ~org-static-blog-posts-directory~.
 - Only writes a new RSS file when changes are made (no more
   unnecessary ~<lastBuildDate>~-updates).
-
+- Adds the ability for post previews to use the contents of ~#+description~ by setting ~org-static-blog-preview-source~ to ~'description~.
+   
 For how I integrate this fork into website generation see the website
 [[https://joarvarndt.se/website][colophon]]. Since configuration is performed at build time, it is easy
 to extend the program and build new "pseudo"-blogs like I have done
