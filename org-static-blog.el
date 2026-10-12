@@ -246,7 +246,7 @@ If nil (the default), all existing posts are included."
   :type '(string)
   :safe t)
 
-(defcustom org-static-blog-langcode "en_GB"
+(defcustom org-static-blog-langcode "en"
   "Language code for the blog content."
   :type '(string)
   :safe t)
@@ -391,7 +391,7 @@ Only if og tags are enabled. It can be overridden with the
 ;; localization support
 (defconst org-static-blog-texts
   '((other-posts
-     ("en_GB" . "Other posts")
+     ("en" . "Other posts")
      ("pl" . "Pozostałe wpisy")
      ("ru" . "Другие публикации")
      ("by" . "Іншыя публікацыі")
@@ -401,7 +401,7 @@ Only if og tags are enabled. It can be overridden with the
      ("zh" . "其他帖子")
      ("ja" . "他の投稿"))
     (date-format
-     ("en_GB" . "%d %B %Y")
+     ("en" . "%d %B %Y")
      ("pl" . "%Y-%m-%d")
      ("ru" . "%d.%m.%Y")
      ("by" . "%d.%m.%Y")
@@ -411,7 +411,7 @@ Only if og tags are enabled. It can be overridden with the
      ("zh" . "%Y-%m-%d")
      ("ja" . "%Y/%m/%d"))
     (tags
-     ("en_GB" . "Tags")
+     ("en" . "Tags")
      ("pl" . "Tagi")
      ("ru" . "Ярлыки")
      ("by" . "Ярлыкі")
@@ -421,7 +421,7 @@ Only if og tags are enabled. It can be overridden with the
      ("zh" . "标签")
      ("ja" . "タグ"))
     (archive
-     ("en_GB" . "Archive")
+     ("en" . "Archive")
      ("pl" . "Archiwum")
      ("ru" . "Архив")
      ("by" . "Архіў")
@@ -431,7 +431,7 @@ Only if og tags are enabled. It can be overridden with the
      ("zh" . "归档")
      ("ja" . "アーカイブ"))
     (posts-tagged
-     ("en_GB" . "Posts tagged")
+     ("en" . "Posts tagged")
      ("pl" . "Wpisy z tagiem")
      ("ru" . "Публикации с ярлыками")
      ("by" . "Публікацыі")
@@ -441,7 +441,7 @@ Only if og tags are enabled. It can be overridden with the
      ("zh" . "打标签的帖子")
      ("ja" . "タグ付けされた投稿"))
     (no-prev-post
-     ("en_GB" . "There is no previous post")
+     ("en" . "There is no previous post")
      ("pl" . "Poprzedni wpis nie istnieje")
      ("ru" . "Нет предыдущей публикации")
      ("by" . "Няма папярэдняй публікацыі")
@@ -451,7 +451,7 @@ Only if og tags are enabled. It can be overridden with the
      ("zh" . "无更旧的帖子")
      ("ja" . "前の投稿はありません"))
     (no-next-post
-     ("en_GB" . "There is no next post")
+     ("en" . "There is no next post")
      ("pl" . "Następny wpis nie istnieje")
      ("ru" . "Нет следующей публикации")
      ("by" . "Няма наступнай публікацыі")
@@ -461,7 +461,7 @@ Only if og tags are enabled. It can be overridden with the
      ("zh" . "无更新的帖子")
      ("ja" . "次の投稿はありません"))
     (title
-     ("en_GB" . "Title: ")
+     ("en" . "Title: ")
      ("pl" . "Tytuł: ")
      ("ru" . "Заголовок: ")
      ("by" . "Загаловак: ")
@@ -471,7 +471,7 @@ Only if og tags are enabled. It can be overridden with the
      ("zh" . "标题：")
      ("ja" . "タイトル: "))
     (filename
-     ("en_GB" . "Filename: ")
+     ("en" . "Filename: ")
      ("pl" . "Nazwa pliku: ")
      ("ru" . "Имя файла: ")
      ("by" . "Імя файла: ")
