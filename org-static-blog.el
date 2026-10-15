@@ -94,6 +94,12 @@ The index page contains the most recent
   :type '(integer)
   :safe t)
 
+(defcustom org-static-blog-index-tag nil
+  "If non-nil, the index page only lists posts with this tag.
+Matching is case-insensitive. Drafts are never listed."
+  :type '(choice (const :tag "None" nil) (string :tag "Tag name"))
+  :safe t)
+
 (defcustom org-static-blog-archive-file "archive.html"
   "File name of the list of all blog posts.
 The archive page lists all posts as headlines."
@@ -1104,6 +1110,12 @@ posts as full text posts."
     ;; reverse-sort, so that the later `last` will grab the newest posts
     (setq post-filenames (sort post-filenames (lambda (x y) (time-less-p (org-static-blog-get-date x)
                                                                          (org-static-blog-get-date y)))))
+    (when org-static-blog-index-tag
+      (setq post-filenames
+            (seq-filter (lambda (file)
+                          (member-ignore-case org-static-blog-index-tag
+                                              (org-static-blog-get-tags file)))
+                        post-filenames)))
     (org-static-blog-assemble-multipost-page
      (concat-to-dir org-static-blog-publish-directory org-static-blog-index-file)
      (last post-filenames org-static-blog-index-length)
