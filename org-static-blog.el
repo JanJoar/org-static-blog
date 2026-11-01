@@ -100,6 +100,22 @@ Matching is case-insensitive. Drafts are never listed."
   :type '(choice (const :tag "None" nil) (string :tag "Tag name"))
   :safe t)
 
+(defcustom org-static-blog-index-tag-blocks nil
+  "Extra preview blocks shown on the index page, one per tag.
+Each element is (TAG &optional PREVIEW-SOURCE).  Each block is headed
+by TAG and lists the last `org-static-blog-index-length' posts with
+that tag, newest first.  Blocks always show previews.  Matching is
+case-insensitive, drafts are never listed, and a post with several
+listed tags appears in each of those blocks.
+
+PREVIEW-SOURCE is `paragraph', `description', or nil to use
+`org-static-blog-preview-source'."
+  :type '(repeat (list (string :tag "Tag")
+                       (choice (const :tag "Global setting" nil)
+                               (const :tag "First paragraph" paragraph)
+                               (const :tag "Post description" description))))
+  :safe t)
+
 (defcustom org-static-blog-archive-file "archive.html"
   "File name of the list of all blog posts.
 The archive page lists all posts as headlines."
@@ -1102,32 +1118,66 @@ href attributes or code blocks."
 (org-export-define-derived-backend 'org-static-blog-post-bare 'html
   :translate-alist '((template . (lambda (contents info) contents))))
 
+(defun org-static-blog--tag-block (tag preview-source post-filenames)
+  "Return the index preview block for TAG, or nil if no post has it.
+POST-FILENAMES must be sorted oldest first.  The block always shows
+previews, using PREVIEW-SOURCE when non-nil."
+  (let ((tagged (seq-filter (lambda (file)
+                              (member-ignore-case tag (org-static-blog-get-tags file)))
+                            post-filenames))
+        (org-static-blog-use-preview t)
+        (org-static-blog-preview-source (or preview-source org-static-blog-preview-source)))
+    (when tagged
+      (concat "<div class=\"" tag "\">"
+              "<h1 class=\"tag-block-heading\">" (capitalize tag) "</h2>\n"
+              (org-static-blog-assemble-post-list
+               (last tagged org-static-blog-index-length))
+              "</div>"))))
+
 (defun org-static-blog-assemble-index ()
   "Assemble the blog index page.
 The index page contains the last `org-static-blog-index-length`
-posts as full text posts."
-  (let ((post-filenames (org-static-blog-get-post-filenames)))
-    ;; reverse-sort, so that the later `last` will grab the newest posts
-    (setq post-filenames (sort post-filenames (lambda (x y) (time-less-p (org-static-blog-get-date x)
-                                                                         (org-static-blog-get-date y)))))
-    (when org-static-blog-index-tag
-      (setq post-filenames
-            (seq-filter (lambda (file)
-                          (member-ignore-case org-static-blog-index-tag
-                                              (org-static-blog-get-tags file)))
-                        post-filenames)))
-    (org-static-blog-assemble-multipost-page
+posts as full text posts, unless `org-static-blog-index-tag' is
+set, in which case that block is omitted.  Each entry of
+`org-static-blog-index-tag-blocks' adds a preview block after it."
+  (let* ((post-filenames (sort (org-static-blog-get-post-filenames)
+                               (lambda (x y) (time-less-p (org-static-blog-get-date x)
+                                                          (org-static-blog-get-date y)))))
+         (main-list (unless org-static-blog-index-tag
+                      (org-static-blog-assemble-post-list
+                       (last post-filenames org-static-blog-index-length))))
+         (tag-lists (mapconcat (lambda (block)
+                                 (or (org-static-blog--tag-block (car block) (cadr block)
+                                                                 post-filenames)
+                                     ""))
+                               org-static-blog-index-tag-blocks "")))
+    (org-static-blog-assemble-page
      (concat-to-dir org-static-blog-publish-directory org-static-blog-index-file)
-     (last post-filenames org-static-blog-index-length)
-     org-static-blog-publish-title
+     (concat main-list tag-lists)
+     nil
      org-static-blog-index-front-matter
      org-static-blog-index-end-matter)))
 
-(defun org-static-blog-assemble-multipost-page (pub-filename post-filenames &optional title front-matter end-matter)
-  "Assemble a page that contains multiple posts one after another.
-Posts are sorted in descending time."
-  (setq post-filenames (sort post-filenames (lambda (x y) (time-less-p (org-static-blog-get-date y)
-                                                                       (org-static-blog-get-date x)))))
+(defun org-static-blog-assemble-post-list (post-filenames)
+  "Return the HTML post list for POST-FILENAMES.
+Posts are sorted in descending time, rendered as previews when
+`org-static-blog-use-preview' is non-nil, and wrapped in a
+\"post-list\" div."
+  (setq post-filenames
+        (sort post-filenames (lambda (x y) (time-less-p (org-static-blog-get-date y)
+                                                        (org-static-blog-get-date x)))))
+  (concat
+   "<div class=\"post-list\">\n"
+   (apply 'concat (mapcar
+                   (if org-static-blog-use-preview
+                       'org-static-blog-get-preview
+                     'org-static-blog-get-post-content) post-filenames))
+   "</div>"))
+
+(defun org-static-blog-assemble-page (pub-filename body &optional title front-matter end-matter)
+  "Write a complete page to PUB-FILENAME with BODY as its content.
+FRONT-MATTER and END-MATTER surround BODY.  TITLE defaults to
+`org-static-blog-publish-title'."
   (org-static-blog-with-find-file
    pub-filename
    (org-static-blog-template
@@ -1135,14 +1185,17 @@ Posts are sorted in descending time."
       org-static-blog-publish-title)
     (concat
      (when front-matter front-matter)
-     "<div class=\"post-list\">\n"
-     (apply 'concat (mapcar
-                     (if org-static-blog-use-preview
-                         'org-static-blog-get-preview
-                       'org-static-blog-get-post-content) post-filenames))
-     "</div>"
+     body
      (when end-matter end-matter))
     (file-name-nondirectory pub-filename))))
+
+(defun org-static-blog-assemble-multipost-page (pub-filename post-filenames &optional title front-matter end-matter)
+  "Assemble a page that contains multiple posts one after another.
+Posts are sorted in descending time."
+  (org-static-blog-assemble-page
+   pub-filename
+   (org-static-blog-assemble-post-list post-filenames)
+   title front-matter end-matter))
 
 (defun org-static-blog-get-edit-date (post-filename)
   "Gets the date for the last revision of POST-FILENAME."
