@@ -102,18 +102,29 @@ Matching is case-insensitive. Drafts are never listed."
 
 (defcustom org-static-blog-index-tag-blocks nil
   "Extra preview blocks shown on the index page, one per tag.
-Each element is (TAG &optional PREVIEW-SOURCE).  Each block is headed
-by TAG and lists the last `org-static-blog-index-length' posts with
-that tag, newest first.  Blocks always show previews.  Matching is
-case-insensitive, drafts are never listed, and a post with several
-listed tags appears in each of those blocks.
+Each element is (TAG &optional PREVIEW-SOURCE LENGTH LABEL).  Each
+block is headed by TAG and lists the newest posts with that tag.
+Blocks always show previews.  Matching is case-insensitive, drafts
+are never listed, and a post with several listed tags appears in
+each of those blocks.
 
 PREVIEW-SOURCE is `paragraph', `description', or nil to use
-`org-static-blog-preview-source'."
+`org-static-blog-preview-source'.
+
+LENGTH is the number of posts in the block.  When nil, it is
+`org-static-blog-index-length'.
+
+LABEL is the text of the link to the tag's archive page, shown after
+the block.  When nil, the link text is \"All\" followed by the
+capitalised TAG."
   :type '(repeat (list (string :tag "Tag")
                        (choice (const :tag "Global setting" nil)
                                (const :tag "First paragraph" paragraph)
-                               (const :tag "Post description" description))))
+                               (const :tag "Post description" description))
+                       (choice (const :tag "Global index length" nil)
+                               (integer :tag "Number of posts"))
+                       (choice (const :tag "Default label" nil)
+                               (string :tag "Link label"))))
   :safe t)
 
 (defcustom org-static-blog-archive-file "archive.html"
@@ -1118,15 +1129,21 @@ href attributes or code blocks."
 (org-export-define-derived-backend 'org-static-blog-post-bare 'html
   :translate-alist '((template . (lambda (contents info) contents))))
 
-(defun org-static-blog--tag-block (tag preview-source post-filenames)
+(defun org-static-blog--tag-block (tag preview-source length label post-filenames)
   "Return the index preview block for TAG, or nil if no post has it.
-POST-FILENAMES must be sorted oldest first.  The block always shows
-previews, using PREVIEW-SOURCE when non-nil."
+POST-FILENAMES must be sorted oldest first.  The block lists the
+newest LENGTH posts, or `org-static-blog-index-length' when LENGTH
+is nil.  It always shows previews, using PREVIEW-SOURCE when non-nil.
+It ends with a link to the tag's archive page, labelled LABEL or
+\"All\" plus TAG."
   (let ((tagged (seq-filter (lambda (file)
                               (member-ignore-case tag (org-static-blog-get-tags file)))
                             post-filenames))
         (org-static-blog-use-preview t)
-        (org-static-blog-preview-source (or preview-source org-static-blog-preview-source)))
+        (org-static-blog-preview-source
+         (if (and (consp preview-source) (eq (car preview-source) 'quote))
+             (cadr preview-source)
+           (or preview-source org-static-blog-preview-source))))
     (when tagged
       (concat "<div class=\"" tag "\">"
               "<h1 class=\"tag-block-heading\">" (capitalize tag) "</h1>\n"
@@ -1151,6 +1168,7 @@ set, in which case that block is omitted.  Each entry of
                        (last post-filenames org-static-blog-index-length))))
          (tag-lists (mapconcat (lambda (block)
                                  (or (org-static-blog--tag-block (car block) (cadr block)
+                                                                 (caddr block) (cadddr block)
                                                                  post-filenames)
                                      ""))
                                org-static-blog-index-tag-blocks "")))
