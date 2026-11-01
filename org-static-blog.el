@@ -1129,9 +1129,12 @@ previews, using PREVIEW-SOURCE when non-nil."
         (org-static-blog-preview-source (or preview-source org-static-blog-preview-source)))
     (when tagged
       (concat "<div class=\"" tag "\">"
-              "<h1 class=\"tag-block-heading\">" (capitalize tag) "</h2>\n"
+              "<h1 class=\"tag-block-heading\">" (capitalize tag) "</h1>\n"
               (org-static-blog-assemble-post-list
-               (last tagged org-static-blog-index-length))
+               (last tagged (or length org-static-blog-index-length)))
+              "<a href=\"./tag-" (downcase tag) ".html\" class=\"archive-link\">"
+              (or label (concat "All " (capitalize tag)))
+              "</a>"
               "</div>"))))
 
 (defun org-static-blog-assemble-index ()
