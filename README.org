@@ -30,6 +30,8 @@ features that my fork provides:
 - Only writes a new RSS file when changes are made (no more
   unnecessary ~<lastBuildDate>~-updates).
 - Adds the ability for post previews to use the contents of ~#+description~ by setting ~org-static-blog-preview-source~ to ~'description~.
+- Allows you to specify certain tags to show in their own blocks on
+  the index page.
    
 For how I integrate this fork into website generation see the website
 [[https://joarvarndt.se/website][colophon]]. Since configuration is performed at build time, it is easy
