@@ -594,18 +594,22 @@ unconditionally."
   (dolist (file (append (org-static-blog-get-post-filenames)
                         (org-static-blog-get-draft-filenames)))
     (when (or force-render (org-static-blog-needs-publishing-p file))
-      (org-static-blog-publish-file file)))
+      (org-static-blog-publish-file file)
+      (message "Published %s" file)))
   (when org-static-blog-generate-og-images
     (org-static-blog-generate-all-og-images))
   ;; don't spam too many deprecation warnings:
   (let ((org-static-blog-enable-deprecation-warning nil))
     (org-static-blog-assemble-index)
+    (message "Index page assembled")
     (org-static-blog-assemble-rss)
     (org-static-blog-assemble-archive)
-    (if org-static-blog-enable-tags
-        (org-static-blog-assemble-tags))
-    (if org-static-blog-enable-social
-        (org-static-blog-assemble-social))))
+    (when org-static-blog-enable-tags
+      (org-static-blog-assemble-tags))
+    (when org-static-blog-enable-social
+      (org-static-blog-assemble-social)
+      (message "Rendered org-social feed")))
+  (message "Finished!"))
 
 (defun org-static-blog-needs-publishing-p (post-filename)
   "Check whether POST-FILENAME was changed since last render."
