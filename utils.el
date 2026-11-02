@@ -95,7 +95,8 @@ Does not generate an image when POST-FILENAME has a `#+image:` header."
                       "-gravity" "SouthEast"
                       "-geometry" "+80+80"
                       "-composite"
-                      (shell-quote-argument output-path))))))
+                      (shell-quote-argument output-path))
+        (message "Generated og:image for %s in %s" post-filename output-dir)))))
 
 (defun org-static-blog-generate-all-og-images ()
   "Generate og:images for all published posts."
@@ -103,8 +104,7 @@ Does not generate an image when POST-FILENAME has a `#+image:` header."
   (let ((output-dir (concat-to-dir org-static-blog-publish-directory
                                    org-static-blog-og-image-directory)))
     (dolist (post-filename (org-static-blog-get-post-filenames))
-      (org-static-blog-generate-og-image post-filename output-dir))
-    (message "Generated og:images in %s" output-dir)))
+      (org-static-blog-generate-og-image post-filename output-dir))))
 
 (provide 'utils)
 
