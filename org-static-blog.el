@@ -1406,18 +1406,21 @@ blog post, but no post body."
   (let ((archive-filename (concat-to-dir org-static-blog-publish-directory org-static-blog-archive-file))
         (archive-entries nil)
         (post-filenames (org-static-blog-get-post-filenames)))
-    (setq post-filenames (sort post-filenames (lambda (x y) (time-less-p
-                                                             (org-static-blog-get-date y)
-                                                             (org-static-blog-get-date x)))))
-    (org-static-blog-with-find-file
-     archive-filename
-     (org-static-blog-template
-      (org-static-blog-gettext 'archive)
-      (concat
-       "<h1 class=\"title\">" (org-static-blog-gettext 'archive) "</h1>\n"
-       org-static-blog-archive-front-matter "\n"
-       (apply 'concat (mapcar 'org-static-blog-get-post-summary post-filenames)))
-      org-static-blog-archive-file))))
+    (when (any-file-newer-than-p archive-filename
+                                 post-filenames)
+      (setq post-filenames (sort post-filenames (lambda (x y) (time-less-p
+                                                               (org-static-blog-get-date y)
+                                                               (org-static-blog-get-date x)))))
+      (org-static-blog-with-find-file
+       archive-filename
+       (org-static-blog-template
+        (org-static-blog-gettext 'archive)
+        (concat
+         "<h1 class=\"title\">" (org-static-blog-gettext 'archive) "</h1>\n"
+         org-static-blog-archive-front-matter "\n"
+         (apply 'concat (mapcar 'org-static-blog-get-post-summary post-filenames)))
+        org-static-blog-archive-file))
+      (message "Assembled post archive"))))
 
 (defun org-static-blog-get-post-summary (post-filename)
   "Assemble post summary for an archive page.
