@@ -106,6 +106,11 @@ Does not generate an image when POST-FILENAME has a `#+image:` header."
     (dolist (post-filename (org-static-blog-get-post-filenames))
       (org-static-blog-generate-og-image post-filename output-dir))))
 
+(defun any-file-newer-than-p (file files)
+  "Return t if any file in FILES is newer than FILE."
+  (and (seq-some (lambda (f) (file-newer-than-file-p f file)) files)
+       t))
+
 (provide 'utils)
 
 ;;; utils.el ends here
