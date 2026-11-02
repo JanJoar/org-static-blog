@@ -1062,17 +1062,13 @@ Returns (list new-result protected-values)."
 RESULT is the string to process.
 PROTECTED-VALUES is a list of original values to restore.
 PREFIX is the placeholder prefix (e.g., 'xcode', 'xhref', 'xclass')."
-  (let ((counter 0))
-    (dolist (val protected-values)
-      (let ((placeholder (format "__%s_protected_%d__" prefix counter)))
-        (let ((pos 0))
-          (while (setq pos (string-match (regexp-quote placeholder) result pos))
-            (setq result (concat (substring result 0 pos)
-                                 val
-                                 (substring result (+ pos (length placeholder)))))
-            (setq pos (+ pos (length val))))))
-      (setq counter (1+ counter))))
-  result)
+  (let ((values (vconcat protected-values)))
+    (replace-regexp-in-string
+     (format "__%s_protected_\\([0-9]+\\)__" prefix)
+     (lambda (match)
+       (let ((n (string-to-number (match-string 1 match))))
+         (if (< n (length values)) (aref values n) match)))
+     result t t)))
 
 (defun org-static-blog--wrap-acronyms (html)
   "Wraps sequences of multiple uppercase letters in HTML in a small-caps span.
