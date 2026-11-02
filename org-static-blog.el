@@ -1455,8 +1455,8 @@ archive headline."
          tag-file
          (cdr tag)
          (concat "<h1 class=\"title\">" (org-static-blog-gettext 'posts-tagged) " \“" (car tag) "\”:</h1>")
-         (concat "<h1 class=\"title\">" (org-static-blog-gettext 'posts-tagged) " <i>\“" (car tag) "</i>\”</h1>")
-         (message "Created tag page for %s" (car tag)))))))
+         (concat "<h1 class=\"title\">" (org-static-blog-gettext 'posts-tagged) " <i>\“" (car tag) "</i>\”</h1>"))
+        (message "Created tag page for %s" (car tag))))))
 
 (defun org-static-blog-assemble-tags-archive-tag (tag)
   "Assemble single TAG for all filenames."
