@@ -22,9 +22,9 @@ Defaults to today's date if DATE is not given."
     (cond
      ((< y 1) "")
      (t (format
-         "%d %s %d"
-         d
+         "%s %d, %d"
          (aref calendar-french-month-name-array (1- m))
+         d
          y)))))
 
 (defun calendar-french-date-year (&optional date)
