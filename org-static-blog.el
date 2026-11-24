@@ -1223,7 +1223,9 @@ Posts are sorted in descending time."
   (let* ((default-directory (locate-dominating-file post-filename ".git"))
          (gregorian-date
           (shell-command-to-string
-           (concat "git log -1 --format=\"%ad\" --date=format:'%d %B %Y' -- "
+           (concat "git log -1 --format=\"%ad\" --date=format:'"
+                   (org-static-blog-gettext 'date-format)
+                   "' -- "
                    post-filename)))
          (french-date (calendar-french-date-string
                        (unless (string-equal gregorian-date "")
