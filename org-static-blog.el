@@ -1070,14 +1070,32 @@ atproto datetime fields require \"+01:00\", not the \"+0100\" that
      (when description `((description . ,description)))
      (when tags `((tags . ,tags))))))
 
+(defun org-static-blog--standard-site-json-ascii (object)
+  "Return OBJECT as JSON with every non-ASCII character escaped as \\uXXXX.
+Characters above U+FFFF become surrogate pairs.  The result is pure ASCII,
+which `url-http' requires: multibyte text in a request signals an error."
+  (replace-regexp-in-string
+   "[^[:ascii:]]"
+   (lambda (c)
+     (let ((n (string-to-char c)))
+       (if (> n #xFFFF)
+           (let ((v (- n #x10000)))
+             (format "\\u%04x\\u%04x"
+                     (+ #xD800 (ash v -10)) (+ #xDC00 (logand v #x3FF))))
+         (format "\\u%04x" n))))
+   (json-encode object) t t))
+
 (defun org-static-blog--standard-site-request (method url &optional body token)
   "Send METHOD request to URL with JSON BODY and optional bearer TOKEN.
 Return the parsed JSON response as an alist.  Signal an error on non-2xx."
   (let* ((url-request-method method)
          (url-request-extra-headers
           (append '(("Content-Type" . "application/json"))
-                  (when token `(("Authorization" . ,(concat "Bearer " token))))))
-         (url-request-data (when body (encode-coding-string (json-encode body) 'utf-8)))
+                  (when token
+                    `(("Authorization"
+                       . ,(concat "Bearer "
+                                  (encode-coding-string token 'utf-8)))))))
+         (url-request-data (when body (org-static-blog--standard-site-json-ascii body)))
          (buffer (url-retrieve-synchronously url t t 30)))
     (unless buffer (error "No response from %s" url))
     (with-current-buffer buffer
