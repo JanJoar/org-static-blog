@@ -1247,7 +1247,7 @@ Modify this function if you want to change a posts headline."
    "</div>"
    "<h1 class=\"post-title\">"
    (if org-static-blog-title-link
-       ("<a href=\"" (org-static-blog-get-post-url post-filename) "\">" (org-static-blog-get-title post-filename) "</a>")
+       (concat "<a href=\"" (org-static-blog-get-post-url post-filename) "\">" (org-static-blog-get-title post-filename) "</a>")
      (org-static-blog-get-title post-filename))
    "</h1>\n <h2 class=\"post-subtitle\">"
    (org-static-blog-get-subtitle post-filename)
