@@ -1017,15 +1017,30 @@ Derived from its public path, so reruns update the same record."
     (format "<link rel=\"site.standard.publication\" href=\"%s\">\n"
             (org-static-blog--standard-site-publication-uri))))
 
+(defun org-static-blog--standard-site-document-tags (post-filename)
+  "Return the discovery tags for the document record of POST-FILENAME.
+Emits the site.standard.document and site.standard.publication <link> hints,
+plus the at:canonical, at:alternate and at:author meta tags that Standard
+Reader reads.  Returns nil when standard.site is off."
+  (when (org-static-blog--standard-site-enabled-p)
+    (let ((document-uri (org-static-blog--standard-site-document-uri post-filename))
+          (publication-uri (org-static-blog--standard-site-publication-uri))
+          (did org-static-blog-standard-site-did))
+      (concat
+       (format "<link rel=\"site.standard.document\" href=\"%s\">\n" document-uri)
+       (format "<link rel=\"site.standard.publication\" href=\"%s\">\n" publication-uri)
+       (format "<meta name=\"at:canonical\" content=\"%s\">\n" document-uri)
+       (format "<meta name=\"at:alternate\" content=\"%s\">\n" publication-uri)
+       (format "<meta name=\"at:author\" content=\"at://%s\">\n" did)))))
+
 (defun org-static-blog--standard-site-add-document-tag (post-filename html)
-  "Insert the site.standard.document <link> for POST-FILENAME into HTML's <head>.
+  "Insert the standard.site discovery tags for POST-FILENAME into HTML's <head>.
 Returns HTML unchanged when standard.site is off."
-  (if (not (org-static-blog--standard-site-enabled-p))
-      html
-    (let ((tag (format "<link rel=\"site.standard.document\" href=\"%s\">\n"
-                       (org-static-blog--standard-site-document-uri post-filename))))
+  (let ((tags (org-static-blog--standard-site-document-tags post-filename)))
+    (if (not tags)
+        html
       (if (string-match "</head>" html)
-          (replace-match (concat tag "</head>") t t html)
+          (replace-match (concat tags "</head>") t t html)
         html))))
 
 (defun org-static-blog--standard-site-text-content (post-filename)
