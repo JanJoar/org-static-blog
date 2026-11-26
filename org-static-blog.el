@@ -429,9 +429,11 @@ session returned by the PDS."
   :type '(string)
   :safe t)
 
-(defcustom org-static-blog-standard-site-publication-rkey "self"
-  "Record key of the site.standard.publication record."
-  :type '(string)
+(defcustom org-static-blog-standard-site-publication-rkey nil
+  "Record key of the site.standard.publication record.
+Nil means derive a TID from `org-static-blog-publish-url'.  atproto
+requires TID-format keys for standard.site collections."
+  :type '(choice (const nil) string)
   :safe t)
 
 (defcustom org-static-blog-display-git-date nil
@@ -970,19 +972,38 @@ The index, archive, tags, and RSS feed are not updated."
   (and org-static-blog-standard-site-enable
        (not (string-empty-p org-static-blog-standard-site-did))))
 
+(defun org-static-blog--standard-site-tid (key)
+  "Return a deterministic atproto TID derived from KEY.
+The TID is the first 63 bits of SHA-256(KEY), encoded as 13 characters
+of the atproto base32-sortable alphabet, so reruns get the same key."
+  (let ((digest (secure-hash 'sha256 key nil nil t))
+        (n 0)
+        (alphabet "234567abcdefghijklmnopqrstuvwxyz")
+        (chars nil))
+    (dotimes (i 8)
+      (setq n (logior (ash n 8) (aref digest i))))
+    (setq n (logand n (1- (ash 1 63))))
+    (dotimes (_ 13)
+      (push (aref alphabet (logand n 31)) chars)
+      (setq n (ash n -5)))
+    (concat chars)))
+
+(defun org-static-blog--standard-site-publication-rkey ()
+  "Return the record key of the publication record."
+  (or org-static-blog-standard-site-publication-rkey
+      (org-static-blog--standard-site-tid org-static-blog-publish-url)))
+
 (defun org-static-blog--standard-site-publication-uri ()
   "Return the AT-URI of the configured site.standard.publication record."
   (format "at://%s/site.standard.publication/%s"
           org-static-blog-standard-site-did
-          org-static-blog-standard-site-publication-rkey))
+          (org-static-blog--standard-site-publication-rkey)))
 
 (defun org-static-blog--standard-site-document-rkey (post-filename)
-  "Return a stable record key for POST-FILENAME.
-Derived from the public path, with characters outside the atproto
-record-key set replaced by hyphens, so reruns update the same record."
-  (replace-regexp-in-string
-   "[^A-Za-z0-9._-]" "-"
-   (file-name-sans-extension (org-static-blog-get-post-public-path post-filename))))
+  "Return a stable TID record key for POST-FILENAME.
+Derived from its public path, so reruns update the same record."
+  (org-static-blog--standard-site-tid
+   (org-static-blog-get-post-public-path post-filename)))
 
 (defun org-static-blog--standard-site-document-uri (post-filename)
   "Return the AT-URI of the site.standard.document record for POST-FILENAME."
@@ -1113,7 +1134,7 @@ auth-source for the PDS host and `org-static-blog-standard-site-handle'."
              did org-static-blog-standard-site-did))
     (org-static-blog--standard-site-put-record
      pds token did "site.standard.publication"
-     org-static-blog-standard-site-publication-rkey
+     (org-static-blog--standard-site-publication-rkey)
      (org-static-blog--standard-site-publication-record))
     (dolist (post (org-static-blog-get-post-filenames))
       (if (not (file-exists-p (org-static-blog-matching-publish-filename post)))
