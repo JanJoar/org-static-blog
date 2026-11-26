@@ -44,6 +44,9 @@
 (require 'org)
 (require 'ox-html)
 (require 'utils)
+(require 'json)
+(require 'url)
+(require 'auth-source)
 
 (defgroup org-static-blog nil
   "Settings for a static blog generator using 'org-mode'."
@@ -406,6 +409,31 @@ Only if og tags are enabled. It can be overridden with the
   :type '(string)
   :safe t)
 
+(defcustom org-static-blog-standard-site-enable nil
+  "Whether to add standard.site (AT Protocol) link tags to pages.
+Adds a publication link to every page and a document link to each post.
+Records are written by `org-static-blog-standard-site-sync'."
+  :group 'org-static-blog
+  :type '(boolean)
+  :safe t)
+
+(defcustom org-static-blog-standard-site-did ""
+  "DID of the account that owns the standard.site records.
+Used to build the AT-URIs written into page heads and to verify the
+session returned by the PDS."
+  :type '(string)
+  :safe t)
+
+(defcustom org-static-blog-standard-site-pds-url "https://bsky.social"
+  "Base URL of the PDS that hosts the account."
+  :type '(string)
+  :safe t)
+
+(defcustom org-static-blog-standard-site-publication-rkey "self"
+  "Record key of the site.standard.publication record."
+  :type '(string)
+  :safe t)
+
 (defcustom org-static-blog-display-git-date nil
   "Shows the date that a post was last edited."
   :type '(boolean)
@@ -536,6 +564,7 @@ Only if og tags are enabled. It can be overridden with the
                                          tUrl
                                        (org-static-blog-get-absolute-url tFilename))
    "\">\n"
+   (org-static-blog--standard-site-publication-tag)
 
    (when org-static-blog-enable-og-tags
      (concat
@@ -921,18 +950,184 @@ The index, archive, tags, and RSS feed are not updated."
   (interactive "f")
   (org-static-blog-with-find-file
    (org-static-blog-matching-publish-filename post-filename)
-   (org-static-blog-template
-    (concat (org-static-blog-get-title post-filename t)
-            (if (org-static-blog-get-subtitle post-filename)
-                (concat ": " (org-static-blog-get-subtitle post-filename))))
-    (concat
-     (org-static-blog-post-preamble post-filename)
-     (org-static-blog-render-post-content post-filename)
-     (org-static-blog-post-postamble post-filename))
-    (org-static-blog-get-post-url post-filename)
-    (org-static-blog-get-description post-filename)
-    (org-static-blog-get-image post-filename)
-    (org-static-blog-get-post-url post-filename))))
+   (org-static-blog--standard-site-add-document-tag
+    post-filename
+    (org-static-blog-template
+     (concat (org-static-blog-get-title post-filename t)
+             (if (org-static-blog-get-subtitle post-filename)
+                 (concat ": " (org-static-blog-get-subtitle post-filename))))
+     (concat
+      (org-static-blog-post-preamble post-filename)
+      (org-static-blog-render-post-content post-filename)
+      (org-static-blog-post-postamble post-filename))
+     (org-static-blog-get-post-url post-filename)
+     (org-static-blog-get-description post-filename)
+     (org-static-blog-get-image post-filename)
+     (org-static-blog-get-post-url post-filename)))))
+
+(defun org-static-blog--standard-site-enabled-p ()
+  "Return non-nil when standard.site support is switched on and configured."
+  (and org-static-blog-standard-site-enable
+       (not (string-empty-p org-static-blog-standard-site-did))))
+
+(defun org-static-blog--standard-site-publication-uri ()
+  "Return the AT-URI of the configured site.standard.publication record."
+  (format "at://%s/site.standard.publication/%s"
+          org-static-blog-standard-site-did
+          org-static-blog-standard-site-publication-rkey))
+
+(defun org-static-blog--standard-site-document-rkey (post-filename)
+  "Return a stable record key for POST-FILENAME.
+Derived from the public path, with characters outside the atproto
+record-key set replaced by hyphens, so reruns update the same record."
+  (replace-regexp-in-string
+   "[^A-Za-z0-9._-]" "-"
+   (file-name-sans-extension (org-static-blog-get-post-public-path post-filename))))
+
+(defun org-static-blog--standard-site-document-uri (post-filename)
+  "Return the AT-URI of the site.standard.document record for POST-FILENAME."
+  (format "at://%s/site.standard.document/%s"
+          org-static-blog-standard-site-did
+          (org-static-blog--standard-site-document-rkey post-filename)))
+
+(defun org-static-blog--standard-site-publication-tag ()
+  "Return the publication <link> tag, or nil when standard.site is off."
+  (when (org-static-blog--standard-site-enabled-p)
+    (format "<link rel=\"site.standard.publication\" href=\"%s\">\n"
+            (org-static-blog--standard-site-publication-uri))))
+
+(defun org-static-blog--standard-site-add-document-tag (post-filename html)
+  "Insert the site.standard.document <link> for POST-FILENAME into HTML's <head>.
+Returns HTML unchanged when standard.site is off."
+  (if (not (org-static-blog--standard-site-enabled-p))
+      html
+    (let ((tag (format "<link rel=\"site.standard.document\" href=\"%s\">\n"
+                       (org-static-blog--standard-site-document-uri post-filename))))
+      (if (string-match "</head>" html)
+          (replace-match (concat tag "</head>") t t html)
+        html))))
+
+(defun org-static-blog--standard-site-text-content (post-filename)
+  "Return the plain-text body of POST-FILENAME, without preamble or postamble."
+  (let ((text (with-temp-buffer
+                (insert (org-static-blog-render-post-content post-filename))
+                (goto-char (point-min))
+                (while (re-search-forward "<[^>]+>" nil t)
+                  (replace-match " " t t))
+                (buffer-string))))
+    ;; Decode &amp; last so "&amp;lt;" becomes "&lt;", not "<".
+    (dolist (entity '(("&lt;" . "<") ("&gt;" . ">") ("&quot;" . "\"")
+                      ("&#39;" . "'") ("&nbsp;" . " ") ("&amp;" . "&")))
+      (setq text (replace-regexp-in-string (regexp-quote (car entity))
+                                           (cdr entity) text t t)))
+    (string-trim (replace-regexp-in-string "[ \t\n\r]+" " " text))))
+
+(defun org-static-blog--standard-site-timestamp (time)
+  "Format TIME as an RFC 3339 datetime with a colon in the offset.
+atproto datetime fields require \"+01:00\", not the \"+0100\" that
+`org-static-blog--date-to-rfc3339' produces."
+  (format-time-string "%Y-%m-%dT%H:%M:%S%:z" time))
+
+(defun org-static-blog--standard-site-publication-record ()
+  "Build the site.standard.publication record for this blog."
+  `(($type . "site.standard.publication")
+    (url . ,(string-remove-suffix "/" org-static-blog-publish-url))
+    (name . ,org-static-blog-publish-title)))
+
+(defun org-static-blog--standard-site-document-record (post-filename)
+  "Build the site.standard.document record for POST-FILENAME."
+  (let ((description (org-static-blog-get-description post-filename))
+        (tags (org-static-blog-get-tags post-filename)))
+    (append
+     `(($type . "site.standard.document")
+       (site . ,(org-static-blog--standard-site-publication-uri))
+       (path . ,(concat "/" (org-static-blog-get-post-public-path post-filename)))
+       (title . ,(org-static-blog-get-title post-filename))
+       (publishedAt . ,(org-static-blog--standard-site-timestamp
+                        (org-static-blog-get-date post-filename)))
+       (textContent . ,(org-static-blog--standard-site-text-content post-filename)))
+     (when description `((description . ,description)))
+     (when tags `((tags . ,tags))))))
+
+(defun org-static-blog--standard-site-request (method url &optional body token)
+  "Send METHOD request to URL with JSON BODY and optional bearer TOKEN.
+Return the parsed JSON response as an alist.  Signal an error on non-2xx."
+  (let* ((url-request-method method)
+         (url-request-extra-headers
+          (append '(("Content-Type" . "application/json"))
+                  (when token `(("Authorization" . ,(concat "Bearer " token))))))
+         (url-request-data (when body (encode-coding-string (json-encode body) 'utf-8)))
+         (buffer (url-retrieve-synchronously url t t 30)))
+    (unless buffer (error "No response from %s" url))
+    (with-current-buffer buffer
+      (unwind-protect
+          (let ((status url-http-response-status))
+            (goto-char (point-min))
+            (re-search-forward "\r?\n\r?\n" nil t)
+            (if (and status (<= 200 status 299))
+                (json-parse-buffer :object-type 'alist :null-object nil)
+              (error "%s %s failed (HTTP %s): %s"
+                     method url status
+                     (buffer-substring-no-properties (point) (min (point-max) (+ (point) 300))))))
+        (kill-buffer buffer)))))
+
+(defun org-static-blog--standard-site-put-record (pds token did collection rkey record)
+  "Create or replace RECORD in COLLECTION under RKEY for DID on PDS."
+  (org-static-blog--standard-site-request
+   "POST" (concat pds "/xrpc/com.atproto.repo.putRecord")
+   `((repo . ,did) (collection . ,collection) (rkey . ,rkey) (record . ,record))
+   token))
+
+(defun org-static-blog--standard-site-handle ()
+  "Return the account handle: `org-static-blog-publish-url' without its scheme.
+For example, \"https://joarvarndt.se/\" gives \"joarvarndt.se\"."
+  (string-remove-suffix
+   "/"
+   (replace-regexp-in-string "\\`https?://" "" org-static-blog-publish-url)))
+
+;;;###autoload
+(defun org-static-blog-standard-site-sync ()
+  "Write standard.site records to the PDS and the verification file.
+Writes the publication record, one document record per published
+post, and `.well-known/site.standard.publication' in the publish
+directory.  Drafts are skipped.  Run `org-static-blog-publish' first
+so the published HTML exists.  The app password is read from
+auth-source for the PDS host and `org-static-blog-standard-site-handle'."
+  (interactive)
+  (unless (org-static-blog--standard-site-enabled-p)
+    (user-error "Set org-static-blog-standard-site-enable and -did first"))
+  (let* ((pds org-static-blog-standard-site-pds-url)
+         (handle (org-static-blog--standard-site-handle))
+         (password (auth-source-pick-first-password
+                    :host (url-host (url-generic-parse-url pds))
+                    :user handle))
+         (_ (unless password
+              (user-error "No app password for %s in auth-source" handle)))
+         (session (org-static-blog--standard-site-request
+                   "POST" (concat pds "/xrpc/com.atproto.server.createSession")
+                   `((identifier . ,handle) (password . ,password))))
+         (token (alist-get 'accessJwt session))
+         (did (alist-get 'did session)))
+    (unless (equal did org-static-blog-standard-site-did)
+      (error "Session DID %s does not match configured DID %s"
+             did org-static-blog-standard-site-did))
+    (org-static-blog--standard-site-put-record
+     pds token did "site.standard.publication"
+     org-static-blog-standard-site-publication-rkey
+     (org-static-blog--standard-site-publication-record))
+    (dolist (post (org-static-blog-get-post-filenames))
+      (if (not (file-exists-p (org-static-blog-matching-publish-filename post)))
+          (message "Skipping %s: not published yet" post)
+        (org-static-blog--standard-site-put-record
+         pds token did "site.standard.document"
+         (org-static-blog--standard-site-document-rkey post)
+         (org-static-blog--standard-site-document-record post))
+        (message "standard.site: wrote %s" post)))
+    (let ((well-known-dir (expand-file-name ".well-known" org-static-blog-publish-directory)))
+      (make-directory well-known-dir t)
+      (with-temp-file (expand-file-name "site.standard.publication" well-known-dir)
+        (insert (org-static-blog--standard-site-publication-uri) "\n")))
+    (message "standard.site sync finished")))
 
 (defun org-static-blog--add-dropcap-to-first-p (html)
   "Return HTML with the first <p> element (not inside a div.intro) having class \"dcap\".
